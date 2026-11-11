@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -28,7 +27,7 @@ const onlineApplicationRoutes = require("./routes/onlineApplications");
 
 const app = express();
 
-const PORT = Number(process.env.PORT || 5000);
+const PORT = Number(process.env.PORT) || 5000;
 const isProduction = process.env.NODE_ENV === "production";
 
 if (isProduction) {
@@ -57,10 +56,16 @@ if (process.env.SESSION_SECRET.length < 32) {
 // CORS CONFIGURATION
 // ==========================================
 
+const defaultOrigins = [
+    "https://royal-heights-school.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+];
+
 const allowedOrigins = (
     process.env.FRONTEND_ORIGINS ||
     process.env.FRONTEND_ORIGIN ||
-    "https://royal-heights-school.vercel.app,http://localhost:5173,http://127.0.0.1:5173"
+    defaultOrigins.join(",")
 )
     .split(",")
     .map((origin) => origin.trim().replace(/\/+$/, ""))
@@ -70,45 +75,46 @@ console.log("Allowed frontend origins:", allowedOrigins);
 
 const corsOptions = {
     origin: (origin, callback) => {
-
-        // Allow Postman and server-to-server requests
+        // Allow Postman and server-to-server requests.
         if (!origin) {
             return callback(null, true);
         }
 
         const normalizedOrigin = origin.trim().replace(/\/+$/, "");
 
-        let isCloudflareOrigin = false;
-
-        try {
-            const parsed = new URL(normalizedOrigin);
-
-            isCloudflareOrigin =
-                parsed.protocol === "https:" &&
-                parsed.hostname.endsWith(".trycloudflare.com");
-
-        } catch {
-            isCloudflareOrigin = false;
+        // Allow configured frontend origins.
+        if (allowedOrigins.includes(normalizedOrigin)) {
+            return callback(null, true);
         }
 
-        if (
-            allowedOrigins.includes(normalizedOrigin) ||
-            isCloudflareOrigin
-        ) {
-            return callback(null, true);
+        // Allow Vercel preview deployments.
+        try {
+            const parsedUrl = new URL(normalizedOrigin);
+
+            const isVercelPreview =
+                parsedUrl.protocol === "https:" &&
+                (
+                    parsedUrl.hostname.endsWith(".vercel.app") ||
+                    parsedUrl.hostname.endsWith(".trycloudflare.com")
+                );
+
+            if (isVercelPreview) {
+                return callback(null, true);
+            }
+        } catch (error) {
+            console.error("Invalid origin:", normalizedOrigin);
         }
 
         console.log("Blocked CORS origin:", origin);
 
-        return callback(
-            new Error("Origin not allowed by CORS")
-        );
+        return callback(new Error("Origin not allowed by CORS"));
     },
 
     credentials: true,
 
     methods: [
         "GET",
+        "HEAD",
         "POST",
         "PUT",
         "PATCH",
@@ -118,24 +124,35 @@ const corsOptions = {
 
     allowedHeaders: [
         "Content-Type",
-        "Authorization"
-    ]
+        "Authorization",
+        "Accept"
+    ],
+
+    optionsSuccessStatus: 204
 };
 
+// Apply CORS before routes and other middleware.
+// Application-level cors middleware also handles preflight requests.
 app.use(cors(corsOptions));
 
 // ==========================================
 // SECURITY AND BODY PARSING
 // ==========================================
 
-app.use(helmet());
+app.use(
+    helmet({
+        crossOriginResourcePolicy: {
+            policy: "cross-origin"
+        }
+    })
+);
 
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use(
     express.urlencoded({
         extended: false,
-        limit: "20kb"
+        limit: "100kb"
     })
 );
 
@@ -150,10 +167,12 @@ const uploadsDir = path.resolve(
 
 fs.mkdirSync(uploadsDir, { recursive: true });
 
+app.use("/uploads", express.static(uploadsDir));
+
 console.log("Uploads directory:", uploadsDir);
 
 // ==========================================
-// POSTGRESQL SESSION CONFIGURATION
+// SESSION CONFIGURATION
 // ==========================================
 
 app.use(
@@ -187,7 +206,7 @@ app.use(
 // ==========================================
 
 app.get("/", (req, res) => {
-    return res.status(200).json({
+    res.status(200).json({
         success: true,
         message: "Royal Heights Backend is running successfully!",
         status: "LIVE",
@@ -196,56 +215,84 @@ app.get("/", (req, res) => {
 });
 
 // ==========================================
-// API ROUTES
+// API HEALTH CHECK
+// ==========================================
+
+app.get(
+    ["/api/health", "/health"],
+    async (req, res) => {
+        try {
+            await pool.query("SELECT 1");
+
+            res.status(200).json({
+                success: true,
+                status: "ok",
+                server: "connected",
+                database: "connected",
+                message: "Backend and PostgreSQL are working."
+            });
+        } catch (error) {
+            console.error("Database health check failed:", error);
+
+            res.status(503).json({
+                success: false,
+                status: "error",
+                server: "running",
+                database: "disconnected",
+                message: "Database connection failed."
+            });
+        }
+    }
+);
+
+// ==========================================
+// AUTH ROUTES
 // ==========================================
 
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
+
+// ==========================================
+// VACANCY ROUTES
+// ==========================================
 
 app.use("/api/vacancies", vacancyRoutes);
+app.use("/vacancies", vacancyRoutes);
+
+// ==========================================
+// APPLICATION ROUTES
+// ==========================================
 
 app.use("/api/applications", applicationRoutes);
+app.use("/applications", applicationRoutes);
+
+// ==========================================
+// STAFF ROUTES
+// ==========================================
 
 app.use("/api/staff", staffRoutes);
+app.use("/staff", staffRoutes);
+
+// ==========================================
+// ADMISSION ENQUIRY ROUTES
+// ==========================================
 
 app.use("/api/admission-enquiries", admissionEnquiryRoutes);
+app.use("/admission-enquiries", admissionEnquiryRoutes);
+
+// ==========================================
+// ONLINE APPLICATION ROUTES
+// ==========================================
 
 app.use("/api/online-applications", onlineApplicationRoutes);
+app.use("/online-applications", onlineApplicationRoutes);
 
 // ==========================================
-// DATABASE HEALTH CHECK
-// ==========================================
-
-app.get("/api/health", async (req, res) => {
-    try {
-        await pool.query("SELECT 1");
-
-        return res.status(200).json({
-            success: true,
-            status: "ok",
-            server: "connected",
-            database: "connected",
-            message: "Backend and PostgreSQL are working."
-        });
-
-    } catch (error) {
-        console.error("Database Health Check Failed:", error);
-
-        return res.status(503).json({
-            success: false,
-            status: "error",
-            server: "running",
-            database: "disconnected",
-            message: "Database connection failed."
-        });
-    }
-});
-
-// ==========================================
-// 404 HANDLER
+// API 404 HANDLER
 // ==========================================
 
 app.use((req, res) => {
-    return res.status(404).json({
+    res.status(404).json({
         success: false,
         message: "API endpoint not found.",
         path: req.originalUrl
@@ -265,7 +312,7 @@ app.use((error, req, res, next) => {
 
     const statusCode = error.status || 500;
 
-    return res.status(statusCode).json({
+    res.status(statusCode).json({
         success: false,
         message:
             statusCode >= 500
@@ -279,7 +326,6 @@ app.use((error, req, res, next) => {
 // ==========================================
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-
     console.log("---------------------------------------");
     console.log("Royal Heights Backend Started");
     console.log(`Port: ${PORT}`);
@@ -287,7 +333,6 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         `Environment: ${process.env.NODE_ENV || "development"}`
     );
     console.log("---------------------------------------");
-
 });
 
 // ==========================================
@@ -295,7 +340,7 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 // ==========================================
 
 server.on("error", (error) => {
-    console.error("Server Startup Error:", error);
+    console.error("Server startup error:", error);
     process.exit(1);
 });
 
