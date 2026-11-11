@@ -47,14 +47,19 @@ if (!process.env.SESSION_SECRET) {
 }
 
 if (process.env.SESSION_SECRET.length < 32) {
-    throw new Error(
-        "SESSION_SECRET must contain at least 32 characters."
-    );
+    throw new Error("SESSION_SECRET must contain at least 32 characters.");
 }
 
 // ==========================================
 // CORS CONFIGURATION
 // ==========================================
+
+function normalizeOrigin(origin) {
+    return String(origin || "")
+        .trim()
+        .replace(/^['"]|['"]$/g, "")
+        .replace(/\/+$/, "");
+}
 
 const defaultOrigins = [
     "https://royal-heights-school.vercel.app",
@@ -62,27 +67,33 @@ const defaultOrigins = [
     "http://127.0.0.1:5173"
 ];
 
-const allowedOrigins = (
-    process.env.FRONTEND_ORIGINS ||
-    process.env.FRONTEND_ORIGIN ||
-    defaultOrigins.join(",")
-)
-    .split(",")
-    .map((origin) => origin.trim().replace(/\/+$/, ""))
-    .filter(Boolean);
+const environmentOrigins = [
+    process.env.FRONTEND_ORIGIN || "",
+    process.env.FRONTEND_ORIGINS || ""
+]
+    .join(",")
+    .split(",");
+
+const allowedOrigins = [
+    ...new Set(
+        [...defaultOrigins, ...environmentOrigins]
+            .map(normalizeOrigin)
+            .filter(Boolean)
+    )
+];
 
 console.log("Allowed frontend origins:", allowedOrigins);
 
 const corsOptions = {
-    origin: (origin, callback) => {
-        // Allow Postman and server-to-server requests.
+    origin: function (origin, callback) {
+        // Allow requests without Origin, such as Postman.
         if (!origin) {
             return callback(null, true);
         }
 
-        const normalizedOrigin = origin.trim().replace(/\/+$/, "");
+        const normalizedOrigin = normalizeOrigin(origin);
 
-        // Allow configured frontend origins.
+        // Allow explicitly configured origins.
         if (allowedOrigins.includes(normalizedOrigin)) {
             return callback(null, true);
         }
@@ -91,21 +102,21 @@ const corsOptions = {
         try {
             const parsedUrl = new URL(normalizedOrigin);
 
-            const isVercelPreview =
+            const isAllowedPreview =
                 parsedUrl.protocol === "https:" &&
                 (
                     parsedUrl.hostname.endsWith(".vercel.app") ||
                     parsedUrl.hostname.endsWith(".trycloudflare.com")
                 );
 
-            if (isVercelPreview) {
+            if (isAllowedPreview) {
                 return callback(null, true);
             }
         } catch (error) {
-            console.error("Invalid origin:", normalizedOrigin);
+            console.error("Invalid request origin:", origin);
         }
 
-        console.log("Blocked CORS origin:", origin);
+        console.error("Blocked CORS origin:", origin);
 
         return callback(new Error("Origin not allowed by CORS"));
     },
@@ -131,8 +142,7 @@ const corsOptions = {
     optionsSuccessStatus: 204
 };
 
-// Apply CORS before routes and other middleware.
-// Application-level cors middleware also handles preflight requests.
+// CORS must run before routes and error handling.
 app.use(cors(corsOptions));
 
 // ==========================================
@@ -218,32 +228,29 @@ app.get("/", (req, res) => {
 // API HEALTH CHECK
 // ==========================================
 
-app.get(
-    ["/api/health", "/health"],
-    async (req, res) => {
-        try {
-            await pool.query("SELECT 1");
+app.get(["/api/health", "/health"], async (req, res) => {
+    try {
+        await pool.query("SELECT 1");
 
-            res.status(200).json({
-                success: true,
-                status: "ok",
-                server: "connected",
-                database: "connected",
-                message: "Backend and PostgreSQL are working."
-            });
-        } catch (error) {
-            console.error("Database health check failed:", error);
+        res.status(200).json({
+            success: true,
+            status: "ok",
+            server: "connected",
+            database: "connected",
+            message: "Backend and PostgreSQL are working."
+        });
+    } catch (error) {
+        console.error("Database health check failed:", error);
 
-            res.status(503).json({
-                success: false,
-                status: "error",
-                server: "running",
-                database: "disconnected",
-                message: "Database connection failed."
-            });
-        }
+        res.status(503).json({
+            success: false,
+            status: "error",
+            server: "running",
+            database: "disconnected",
+            message: "Database connection failed."
+        });
     }
-);
+});
 
 // ==========================================
 // AUTH ROUTES
@@ -310,6 +317,13 @@ app.use((error, req, res, next) => {
         return next(error);
     }
 
+    if (error.message === "Origin not allowed by CORS") {
+        return res.status(403).json({
+            success: false,
+            message: "This origin is not allowed."
+        });
+    }
+
     const statusCode = error.status || 500;
 
     res.status(statusCode).json({
@@ -329,9 +343,7 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     console.log("---------------------------------------");
     console.log("Royal Heights Backend Started");
     console.log(`Port: ${PORT}`);
-    console.log(
-        `Environment: ${process.env.NODE_ENV || "development"}`
-    );
+    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
     console.log("---------------------------------------");
 });
 
