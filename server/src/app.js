@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const express = require("express");
@@ -69,6 +70,7 @@ console.log("Allowed frontend origins:", allowedOrigins);
 
 const corsOptions = {
     origin: (origin, callback) => {
+
         // Allow Postman and server-to-server requests
         if (!origin) {
             return callback(null, true);
@@ -84,6 +86,7 @@ const corsOptions = {
             isCloudflareOrigin =
                 parsed.protocol === "https:" &&
                 parsed.hostname.endsWith(".trycloudflare.com");
+
         } catch {
             isCloudflareOrigin = false;
         }
@@ -97,7 +100,9 @@ const corsOptions = {
 
         console.log("Blocked CORS origin:", origin);
 
-        return callback(new Error("Origin not allowed by CORS"));
+        return callback(
+            new Error("Origin not allowed by CORS")
+        );
     },
 
     credentials: true,
@@ -274,6 +279,7 @@ app.use((error, req, res, next) => {
 // ==========================================
 
 const server = app.listen(PORT, "0.0.0.0", () => {
+
     console.log("---------------------------------------");
     console.log("Royal Heights Backend Started");
     console.log(`Port: ${PORT}`);
@@ -281,6 +287,7 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         `Environment: ${process.env.NODE_ENV || "development"}`
     );
     console.log("---------------------------------------");
+
 });
 
 // ==========================================
