@@ -2,17 +2,56 @@ const express = require("express");
 const router = express.Router();
 
 const db = require("../db");
+
 const {
   requireAuth,
   requirePermission,
 } = require("../middleware/requireAuth");
 
 // ==========================================
-// PUBLIC API: Submit Online Application
+// DATABASE TABLE SETUP
+// Automatically creates table if missing
+// ==========================================
+
+let tableReadyPromise = null;
+
+async function ensureOnlineApplicationsTable() {
+  if (!tableReadyPromise) {
+    tableReadyPromise = db
+      .query(`
+        CREATE TABLE IF NOT EXISTS public.online_applications (
+          id BIGSERIAL PRIMARY KEY,
+          student_name VARCHAR(100) NOT NULL,
+          date_of_birth DATE NOT NULL,
+          class_name VARCHAR(30) NOT NULL,
+          parent_name VARCHAR(100) NOT NULL,
+          phone VARCHAR(18) NOT NULL,
+          email VARCHAR(150),
+          previous_school VARCHAR(150),
+          message TEXT,
+          status VARCHAR(20) NOT NULL DEFAULT 'New',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `)
+      .catch((error) => {
+        // Allow another attempt if table creation fails
+        tableReadyPromise = null;
+        throw error;
+      });
+  }
+
+  return tableReadyPromise;
+}
+
+// ==========================================
+// PUBLIC API: SUBMIT ONLINE APPLICATION
+// POST /api/online-applications
 // ==========================================
 
 router.post("/", async (req, res) => {
   try {
+    await ensureOnlineApplicationsTable();
+
     const {
       studentName,
       dob,
@@ -22,15 +61,20 @@ router.post("/", async (req, res) => {
       email,
       previousSchool,
       message,
-    } = req.body;
+    } = req.body || {};
 
     // Required field validation
     if (
-      !studentName?.trim() ||
+      typeof studentName !== "string" ||
+      !studentName.trim() ||
+      typeof dob !== "string" ||
       !dob ||
-      !className?.trim() ||
-      !parentName?.trim() ||
-      !phone?.trim()
+      typeof className !== "string" ||
+      !className.trim() ||
+      typeof parentName !== "string" ||
+      !parentName.trim() ||
+      typeof phone !== "string" ||
+      !phone.trim()
     ) {
       return res.status(400).json({
         success: false,
@@ -39,19 +83,31 @@ router.post("/", async (req, res) => {
     }
 
     // Phone validation
-    if (!/^[0-9+() -]{8,18}$/.test(phone.trim())) {
+    const cleanPhone = phone.trim();
+
+    if (!/^[0-9+() -]{8,18}$/.test(cleanPhone)) {
       return res.status(400).json({
         success: false,
         message: "Please enter a valid phone number.",
       });
     }
 
-    // Date validation
-    const birthDate = new Date(`${dob}T00:00:00`);
+    // Date of birth validation
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid date of birth.",
+      });
+    }
+
+    const birthDate = new Date(`${dob}T00:00:00.000Z`);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
 
     if (
       Number.isNaN(birthDate.getTime()) ||
-      birthDate > new Date()
+      birthDate.toISOString().slice(0, 10) !== dob ||
+      birthDate > today
     ) {
       return res.status(400).json({
         success: false,
@@ -59,36 +115,58 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Optional email validation
+    const cleanEmail =
+      typeof email === "string" ? email.trim() : "";
+
+    if (
+      cleanEmail &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address.",
+      });
+    }
+
     // Insert application into PostgreSQL
     const result = await db.query(
-      `INSERT INTO online_applications
-      (
-        student_name,
-        date_of_birth,
-        class_name,
-        parent_name,
-        phone,
-        email,
-        previous_school,
-        message
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING
-        id,
-        student_name,
-        class_name,
-        parent_name,
-        status,
-        created_at`,
+      `
+        INSERT INTO public.online_applications (
+          student_name,
+          date_of_birth,
+          class_name,
+          parent_name,
+          phone,
+          email,
+          previous_school,
+          message
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING
+          id,
+          student_name,
+          date_of_birth,
+          class_name,
+          parent_name,
+          phone,
+          email,
+          status,
+          created_at
+      `,
       [
         studentName.trim(),
         dob,
         className.trim(),
         parentName.trim(),
-        phone.trim(),
-        email?.trim() || null,
-        previousSchool?.trim() || null,
-        message?.trim() || null,
+        cleanPhone,
+        cleanEmail || null,
+        typeof previousSchool === "string"
+          ? previousSchool.trim() || null
+          : null,
+        typeof message === "string"
+          ? message.trim() || null
+          : null,
       ]
     );
 
@@ -108,7 +186,8 @@ router.post("/", async (req, res) => {
 });
 
 // ==========================================
-// PROTECTED API: Get All Applications
+// ADMIN API: GET ALL ONLINE APPLICATIONS
+// GET /api/online-applications
 // ==========================================
 
 router.get(
@@ -117,8 +196,10 @@ router.get(
   requirePermission("view_online_applications"),
   async (req, res) => {
     try {
-      const result = await db.query(
-        `SELECT
+      await ensureOnlineApplicationsTable();
+
+      const result = await db.query(`
+        SELECT
           id,
           student_name,
           date_of_birth,
@@ -130,12 +211,13 @@ router.get(
           message,
           status,
           created_at
-        FROM online_applications
-        ORDER BY created_at DESC`
-      );
+        FROM public.online_applications
+        ORDER BY created_at DESC
+      `);
 
-      return res.json({
+      return res.status(200).json({
         success: true,
+        count: result.rowCount,
         applications: result.rows,
       });
     } catch (error) {
@@ -150,7 +232,8 @@ router.get(
 );
 
 // ==========================================
-// PROTECTED API: Update Application Status
+// ADMIN API: UPDATE APPLICATION STATUS
+// PATCH /api/online-applications/:id/status
 // ==========================================
 
 router.patch(
@@ -159,8 +242,10 @@ router.patch(
   requirePermission("manage_online_applications"),
   async (req, res) => {
     try {
+      await ensureOnlineApplicationsTable();
+
       const { id } = req.params;
-      const { status } = req.body;
+      const { status } = req.body || {};
 
       const allowedStatuses = [
         "New",
@@ -184,10 +269,12 @@ router.patch(
       }
 
       const result = await db.query(
-        `UPDATE online_applications
-         SET status = $1
-         WHERE id = $2
-         RETURNING id, status`,
+        `
+          UPDATE public.online_applications
+          SET status = $1
+          WHERE id = $2
+          RETURNING id, status
+        `,
         [status, Number(id)]
       );
 
@@ -198,7 +285,7 @@ router.patch(
         });
       }
 
-      return res.json({
+      return res.status(200).json({
         success: true,
         message: "Application status updated successfully.",
         application: result.rows[0],
