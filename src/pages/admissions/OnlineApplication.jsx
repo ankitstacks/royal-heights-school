@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+
 import { motion, useReducedMotion } from "motion/react";
 
 import {
@@ -21,7 +21,14 @@ import "./Admissions.css";
 // BACKEND API CONFIGURATION
 // ==========================================
 
-const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000/api"
+).replace(/\/+$/, "");
+
+// ==========================================
+// CLASS OPTIONS
+// ==========================================
 
 const classOptions = [
   "Nursery",
@@ -41,6 +48,10 @@ const classOptions = [
   "Class 12",
 ];
 
+// ==========================================
+// INITIAL FORM
+// ==========================================
+
 const initialForm = {
   studentName: "",
   dob: "",
@@ -51,6 +62,21 @@ const initialForm = {
   previousSchool: "",
   message: "",
 };
+
+// Get today's date in local timezone
+function getTodayDate() {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 
 export default function OnlineApplication() {
   const reduceMotion = useReducedMotion();
@@ -78,6 +104,45 @@ export default function OnlineApplication() {
   }
 
   // ==========================================
+  // CLIENT-SIDE VALIDATION
+  // ==========================================
+
+  function validateForm() {
+    if (!form.studentName.trim()) {
+      return "Please enter student's full name.";
+    }
+
+    if (!form.dob) {
+      return "Please select student's date of birth.";
+    }
+
+    if (form.dob > getTodayDate()) {
+      return "Date of birth cannot be in the future.";
+    }
+
+    if (!form.className) {
+      return "Please select the class applying for.";
+    }
+
+    if (!form.parentName.trim()) {
+      return "Please enter parent or guardian name.";
+    }
+
+    if (!/^[0-9]{10}$/.test(form.phone.trim())) {
+      return "Please enter a valid 10-digit mobile number.";
+    }
+
+    if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    ) {
+      return "Please enter a valid email address.";
+    }
+
+    return "";
+  }
+
+  // ==========================================
   // SUBMIT ONLINE APPLICATION
   // ==========================================
 
@@ -87,9 +152,28 @@ export default function OnlineApplication() {
     if (submitting) return;
 
     setError("");
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
+      const payload = {
+        studentName: form.studentName.trim(),
+        dob: form.dob,
+        className: form.className,
+        parentName: form.parentName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || null,
+        previousSchool: form.previousSchool.trim() || null,
+        message: form.message.trim() || null,
+      };
+
       const response = await fetch(
         `${API_URL}/online-applications`,
         {
@@ -98,11 +182,10 @@ export default function OnlineApplication() {
             "Content-Type": "application/json",
           },
           credentials: "include",
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         }
       );
 
-      // Read response safely, even if the server returns empty text.
       const responseText = await response.text();
 
       let data = {};
@@ -112,12 +195,12 @@ export default function OnlineApplication() {
           data = JSON.parse(responseText);
         } catch {
           throw new Error(
-            `Invalid server response. HTTP ${response.status}. Please check the backend API.`
+            `Server returned an invalid response. HTTP ${response.status}.`
           );
         }
       }
 
-      if (!response.ok || !data.success) {
+      if (!response.ok || data.success !== true) {
         throw new Error(
           data.message ||
             data.error ||
@@ -126,13 +209,24 @@ export default function OnlineApplication() {
       }
 
       setSubmitted(true);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } catch (err) {
       console.error("Online application submission error:", err);
 
-      setError(
-        err.message ||
-          "Unable to submit your application. Please try again."
-      );
+      if (err.name === "TypeError") {
+        setError(
+          "Unable to connect to the school server. Please try again later."
+        );
+      } else {
+        setError(
+          err.message ||
+            "Unable to submit your application. Please try again."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -147,7 +241,29 @@ export default function OnlineApplication() {
     setSubmitted(false);
     setError("");
     setSubmitting(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
+
+  // ==========================================
+  // ANIMATION SETTINGS
+  // ==========================================
+
+  const fadeUp = reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 25 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, amount: 0.1 },
+        transition: { duration: 0.6 },
+      };
+
+  // ==========================================
+  // RENDER
+  // ==========================================
 
   return (
     <main className="admission-page">
@@ -291,6 +407,7 @@ export default function OnlineApplication() {
 
               <div>
                 <small>NEED HELP?</small>
+
                 <a href="tel:+918720024123">
                   +91 87200 24123
                 </a>
@@ -302,10 +419,7 @@ export default function OnlineApplication() {
 
           <motion.div
             className="admission-form-panel"
-            initial={reduceMotion ? false : { opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.1 }}
-            transition={{ duration: 0.6 }}
+            {...fadeUp}
           >
             <div className="admission-form-panel-top">
               <div className="admission-form-title">
@@ -327,7 +441,9 @@ export default function OnlineApplication() {
               </span>
             </div>
 
-            {/* SUCCESS SCREEN */}
+            {/* ======================================
+                SUCCESS SCREEN
+            ====================================== */}
 
             {submitted ? (
               <motion.div
@@ -389,13 +505,14 @@ export default function OnlineApplication() {
               </motion.div>
             ) : (
 
-              /* APPLICATION FORM */
+              /* ======================================
+                  APPLICATION FORM
+              ====================================== */
 
               <form
                 className="admission-form"
                 onSubmit={handleSubmit}
               >
-
                 {/* STUDENT INFORMATION */}
 
                 <div className="admission-form-section-label">
@@ -430,7 +547,7 @@ export default function OnlineApplication() {
                         name="dob"
                         value={form.dob}
                         onChange={updateField}
-                        max={new Date().toISOString().split("T")[0]}
+                        max={getTodayDate()}
                         required
                       />
                     </span>
@@ -497,9 +614,11 @@ export default function OnlineApplication() {
                         onChange={updateField}
                         required
                         pattern="[0-9]{10}"
-                        maxLength={18}
+                        minLength={10}
+                        maxLength={10}
                         autoComplete="tel"
-                        placeholder="Phone number"
+                        inputMode="numeric"
+                        placeholder="10-digit phone number"
                       />
                     </span>
                   </label>
