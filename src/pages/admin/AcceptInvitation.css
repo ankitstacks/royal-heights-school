@@ -1,0 +1,244 @@
+
+.invitation-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 35px 18px;
+  background:
+    radial-gradient(circle at top left, #f3e5df, transparent 40%),
+    #f8f5f1;
+  font-family: Arial, sans-serif;
+}
+
+.invitation-card {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  padding: 42px 38px;
+  border: 1px solid #eadbd0;
+  border-radius: 16px;
+  box-shadow: 0 15px 55px rgba(65, 25, 28, 0.09);
+  text-align: center;
+}
+
+.invitation-logo {
+  width: 65px;
+  height: 65px;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #76232d;
+  color: #ffffff;
+  font-family: Georgia, serif;
+  font-size: 27px;
+  font-weight: bold;
+}
+
+.invitation-school-name {
+  color: #76232d;
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.invitation-school-subtitle {
+  margin-top: 5px;
+  color: #8b7770;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.invitation-divider {
+  height: 1px;
+  background: #eadbd0;
+  margin: 25px 0;
+}
+
+.invitation-heading {
+  margin-bottom: 25px;
+}
+
+.invitation-badge {
+  display: inline-block;
+  padding: 7px 13px;
+  border-radius: 30px;
+  background: #f8eeee;
+  color: #76232d;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1.2px;
+}
+
+.invitation-heading h1,
+.invitation-card h1 {
+  margin: 17px 0 10px;
+  color: #342126;
+  font-family: Georgia, serif;
+  font-size: 27px;
+  font-weight: 600;
+}
+
+.invitation-description {
+  color: #80716d;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.invitation-field {
+  text-align: left;
+  margin-bottom: 21px;
+}
+
+.invitation-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #39292a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.invitation-password-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e6d9d2;
+  border-radius: 8px;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.invitation-password-wrapper:focus-within {
+  border-color: #76232d;
+  box-shadow: 0 0 0 3px rgba(118, 35, 45, 0.08);
+}
+
+.invitation-password-wrapper input {
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #342126;
+  font-size: 13px;
+}
+
+.invitation-toggle {
+  border: none;
+  background: transparent;
+  padding: 10px 13px;
+  color: #76232d;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.invitation-field small {
+  display: block;
+  margin-top: 7px;
+  color: #958680;
+  font-size: 11px;
+}
+
+.invitation-error {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid #f1c5c5;
+  border-radius: 8px;
+  background: #fff2f2;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.invitation-submit {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: #76232d;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.invitation-submit:hover {
+  background: #5e1923;
+  transform: translateY(-1px);
+}
+
+.invitation-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.invitation-footer {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee5df;
+}
+
+.invitation-footer p {
+  color: #968680;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.invitation-footer a,
+.invitation-home {
+  display: inline-block;
+  margin-top: 8px;
+  color: #76232d;
+  font-size: 13px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.invitation-success-icon {
+  width: 65px;
+  height: 65px;
+  margin: 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e8f6ed;
+  color: #168348;
+  font-size: 35px;
+  font-weight: bold;
+}
+
+.invitation-card > .invitation-submit {
+  margin-top: 25px;
+}
+
+@media (max-width: 520px) {
+  .invitation-page {
+    padding: 20px 14px;
+  }
+
+  .invitation-card {
+    padding: 32px 22px;
+  }
+
+  .invitation-heading h1,
+  .invitation-card h1 {
+    font-size: 23px;
+  }
+
+  .invitation-school-name {
+    font-size: 21px;
+  }
+}

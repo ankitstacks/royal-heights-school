@@ -1,0 +1,234 @@
+
+.branch-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(24, 8, 12, 0.76);
+  backdrop-filter: blur(9px);
+  animation: branchOverlayIn 0.35s ease both;
+}
+
+.branch-popup {
+  width: min(950px, 100%);
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #fffaf4;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.4);
+  animation: branchPopupIn 0.5s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.branch-popup-close {
+  position: absolute;
+  z-index: 3;
+  top: 13px;
+  right: 13px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 50%;
+  background: rgba(35, 15, 18, .8);
+  color: white;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.branch-popup-close:hover {
+  background: #8b202b;
+  transform: rotate(90deg);
+}
+
+.branch-popup-content {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  align-items: stretch;
+}
+
+.branch-popup-image {
+  min-height: 440px;
+  background: #eee0d0;
+}
+
+.branch-popup-image {
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.branch-popup-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 440px;
+  object-fit: contain;
+  object-position: center;
+}
+
+.branch-popup-info {
+  padding: 48px 35px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.branch-popup-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #a36e2b;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.branch-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #15965b;
+  box-shadow: 0 0 0 4px rgba(21,150,91,.12);
+}
+
+.branch-popup-info h2 {
+  margin: 22px 0 13px;
+  color: #42151b;
+  font-family: Georgia, serif;
+  font-size: clamp(29px, 3vw, 42px);
+  line-height: 1.15;
+}
+
+.branch-popup-info h2 span {
+  display: block;
+  color: #a97836;
+  font-style: italic;
+}
+
+.branch-popup-info p {
+  margin: 0 0 25px;
+  color: #78675f;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.branch-popup-actions {
+  display: grid;
+  gap: 11px;
+}
+
+.branch-action {
+  min-height: 49px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 10px;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: .25s ease;
+}
+
+.branch-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+}
+
+.branch-action.whatsapp {
+  background: #138b58;
+}
+
+.branch-action.call {
+  background: #81212c;
+}
+
+.branch-action.talk {
+  background: #b48746;
+}
+
+.branch-popup-dismiss {
+  margin-top: 18px;
+  padding: 8px;
+  border: 0;
+  background: transparent;
+  color: #8a7770;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.branch-popup-dismiss:hover {
+  color: #81212c;
+}
+
+@keyframes branchOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes branchPopupIn {
+  from {
+    opacity: 0;
+    transform: translateY(35px) scale(.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 700px) {
+  .branch-popup {
+    max-width: 430px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 17px;
+  }
+
+  .branch-popup-content {
+    grid-template-columns: 1fr;
+  }
+
+  .branch-popup-image,
+  .branch-popup-image img {
+    min-height: 0;
+    height: auto;
+    max-height: 270px;
+  }
+
+  .branch-popup-image img {
+    object-fit: contain;
+    background: #fff;
+  }
+
+  .branch-popup-info {
+    padding: 25px 22px 18px;
+  }
+
+  .branch-popup-info h2 {
+    margin-top: 14px;
+    font-size: 30px;
+  }
+
+  .branch-popup-info p {
+    margin-bottom: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .branch-popup-overlay,
+  .branch-popup {
+    animation: none;
+  }
+}
