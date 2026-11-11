@@ -23,7 +23,8 @@
     "helmet": "^8.3.0",
     "multer": "^2.5.0",
     "nodemailer": "^10.3.1",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "resend": "^6.38.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

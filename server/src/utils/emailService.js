@@ -1,53 +1,89 @@
+const { Resend } = require("resend");
 
-const nodemailer = require("nodemailer");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 465),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const EMAIL_FROM =
+  process.env.EMAIL_FROM || "Royal Heights <onboarding@resend.dev>";
 
 function escapeHtml(value = "") {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[char]);
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+
+    return entities[char];
+  });
 }
 
-function emailTemplate(title, content) {
+function emailTemplate(content) {
   return `
-    <div style="background:#f8f3ed;padding:30px;font-family:Arial,sans-serif;">
-      <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;">
-        <div style="background:#76232d;padding:28px;text-align:center;color:#ffffff;">
-          <h1 style="margin:0;font-size:24px;">Royal Heights</h1>
-          <p style="margin:8px 0 0;">Higher Secondary School, Zirapur</p>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+
+      <body style="margin:0;padding:0;background:#f7f3ed;font-family:Arial,sans-serif;color:#302421;">
+        <div style="max-width:600px;margin:30px auto;padding:20px;">
+          <div style="background:#76232d;padding:25px;text-align:center;border-radius:12px 12px 0 0;">
+            <h1 style="margin:0;color:#ffffff;font-size:24px;">
+              ROYAL HEIGHTS
+            </h1>
+            <p style="margin:8px 0 0;color:#f2dfc0;font-size:13px;">
+              Higher Secondary School
+            </p>
+          </div>
+
+          <div style="background:#ffffff;padding:30px;border:1px solid #eadfd6;">
+            ${content}
+          </div>
+
+          <div style="background:#f0e8df;padding:20px;text-align:center;border-radius:0 0 12px 12px;">
+            <p style="margin:0;color:#76232d;font-weight:bold;">
+              Royal Heights Higher Secondary School
+            </p>
+            <p style="margin:8px 0;color:#76645d;font-size:12px;">
+              Zirapur, Madhya Pradesh
+            </p>
+            <p style="margin:0;color:#76645d;font-size:12px;">
+              This is an automated email. Please do not reply directly.
+            </p>
+          </div>
         </div>
-        <div style="padding:30px;color:#342126;line-height:1.7;">
-          <h2 style="color:#76232d;">${title}</h2>
-          ${content}
-          <p style="margin-top:28px;">
-            Regards,<br/>
-            <strong>Royal Heights Administration</strong><br/>
-            Royal Heights Higher Secondary School
-          </p>
-        </div>
-        <div style="background:#f8f3ed;padding:16px;text-align:center;color:#777;font-size:12px;">
-          This is an automated email from Royal Heights Higher Secondary School.
-          Please do not reply directly to this message.
-        </div>
-      </div>
-    </div>
+      </body>
+    </html>
   `;
 }
 
-// 1. Application received email
+async function sendEmail({ to, subject, html }) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is missing in server environment.");
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: EMAIL_FROM,
+    to: [to],
+    subject,
+    html,
+  });
+
+  if (error) {
+    console.error("Resend email error:", error);
+    throw new Error(error.message || "Email could not be sent.");
+  }
+
+  return data;
+}
+
+// --------------------------------------------------
+// APPLICATION RECEIVED EMAIL
+// --------------------------------------------------
+
 async function sendApplicationReceived({
   email,
   name,
@@ -55,35 +91,46 @@ async function sendApplicationReceived({
   applicationId,
 }) {
   const safeName = escapeHtml(name);
-  const safeJob = escapeHtml(jobTitle);
+  const safeJobTitle = escapeHtml(jobTitle);
+  const reference = escapeHtml(`RH-${applicationId}`);
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  const html = emailTemplate(`
+    <h2 style="color:#76232d;">Application Received!</h2>
+
+    <p>Hello ${safeName},</p>
+
+    <p>
+      Thank you for applying to Royal Heights Higher Secondary School.
+      We have successfully received your job application.
+    </p>
+
+    <div style="background:#f8f4ef;padding:18px;border-radius:8px;margin:20px 0;">
+      <p><strong>Position:</strong> ${safeJobTitle}</p>
+      <p><strong>Application Reference:</strong> ${reference}</p>
+      <p><strong>Status:</strong> Received</p>
+    </div>
+
+    <p>
+      Our team will review your application and contact you if your
+      profile matches our requirements.
+    </p>
+
+    <p>Thank you for your interest in joining our school.</p>
+
+    <p>Regards,<br/><strong>Royal Heights Team</strong></p>
+  `);
+
+  return sendEmail({
     to: email,
-    subject: `Application Received – ${jobTitle} | Royal Heights School`,
-    html: emailTemplate(
-      "Thank You for Your Application!",
-      `
-        <p>Dear ${safeName},</p>
-        <p>
-          Thank you for your interest in joining
-          <strong>Royal Heights Higher Secondary School, Zirapur.</strong>
-        </p>
-        <p>
-          We confirm that we have received your application for
-          <strong>${safeJob}</strong>.
-        </p>
-        <p>
-          Our recruitment team will carefully review your application
-          and contact you regarding the next steps.
-        </p>
-        <p><strong>Application Reference:</strong> RH-${applicationId}</p>
-      `
-    ),
+    subject: "Application Received - Royal Heights",
+    html,
   });
 }
 
-// 2. Application status changed email
+// --------------------------------------------------
+// APPLICATION STATUS EMAIL
+// --------------------------------------------------
+
 async function sendApplicationStatusEmail({
   email,
   name,
@@ -92,103 +139,71 @@ async function sendApplicationStatusEmail({
   applicationId,
 }) {
   const safeName = escapeHtml(name);
-  const safeJob = escapeHtml(jobTitle);
+  const safeJobTitle = escapeHtml(jobTitle);
+  const safeStatus = escapeHtml(status);
+  const reference = escapeHtml(`RH-${applicationId}`);
 
-  const messages = {
-    shortlisted: {
-      subject: "Congratulations! Your Application Has Been Shortlisted",
-      title: "You Have Been Shortlisted!",
-      content: `
-        <p>Dear ${safeName},</p>
-        <p>
-          Your application for <strong>${safeJob}</strong> at
-          Royal Heights Higher Secondary School has been shortlisted.
-        </p>
-        <p>Our recruitment team will contact you regarding the next stage.</p>
-        <p>Congratulations, and thank you for your interest!</p>
-      `,
-    },
-
-    rejected: {
-      subject: "Update Regarding Your Job Application",
-      title: "Application Status Update",
-      content: `
-        <p>Dear ${safeName},</p>
-        <p>
-          Thank you for applying for <strong>${safeJob}</strong>
-          at Royal Heights Higher Secondary School.
-        </p>
-        <p>
-          After reviewing your application, we regret to inform you
-          that we will not be progressing with it at this time.
-        </p>
-        <p>We wish you every success in your career.</p>
-      `,
-    },
-
-    hired: {
-      subject: "Congratulations! You Have Been Selected",
-      title: "Congratulations on Your Selection!",
-      content: `
-        <p>Dear ${safeName},</p>
-        <p>
-          You have been selected for the position of
-          <strong>${safeJob}</strong> at Royal Heights Higher Secondary School.
-        </p>
-        <p>
-          Our team will contact you regarding the offer,
-          documentation and joining formalities.
-        </p>
-      `,
-    },
-
-    pending: {
-      subject: "Your Application Is Under Review",
-      title: "Application Under Review",
-      content: `
-        <p>Dear ${safeName},</p>
-        <p>
-          Your application for <strong>${safeJob}</strong>
-          is currently under review by our recruitment team.
-        </p>
-        <p>We will contact you when there is a further update.</p>
-      `,
-    },
+  const statusMessages = {
+    shortlisted:
+      "Congratulations! Your application has been shortlisted. Our team will contact you regarding the next steps.",
+    rejected:
+      "Thank you for your interest. Unfortunately, your application has not been selected for this position at this time.",
+    hired:
+      "Congratulations! You have been selected for the position. Our team will contact you with further details.",
+    pending:
+      "Your application is currently under review. We will update you when there is a change in its status.",
   };
 
-  const notification = messages[status];
+  const message =
+    statusMessages[String(status).toLowerCase()] ||
+    "Your application status has been updated. Please contact the school for further information.";
 
-  if (!notification) {
-    throw new Error("Unsupported application status.");
-  }
+  const html = emailTemplate(`
+    <h2 style="color:#76232d;">Application Status Update</h2>
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+    <p>Hello ${safeName},</p>
+
+    <p>
+      The status of your job application at Royal Heights
+      Higher Secondary School has been updated.
+    </p>
+
+    <div style="background:#f8f4ef;padding:18px;border-radius:8px;margin:20px 0;">
+      <p><strong>Position:</strong> ${safeJobTitle}</p>
+      <p><strong>Reference:</strong> ${reference}</p>
+      <p><strong>New Status:</strong> ${safeStatus}</p>
+    </div>
+
+    <p>${escapeHtml(message)}</p>
+
+    <p>Regards,<br/><strong>Royal Heights Team</strong></p>
+  `);
+
+  return sendEmail({
     to: email,
-    subject: notification.subject,
-    html: emailTemplate(
-      notification.title,
-      `
-        ${notification.content}
-        <p><strong>Application Reference:</strong> RH-${applicationId}</p>
-      `
-    ),
+    subject: `Application Status Update - ${status}`,
+    html,
   });
 }
 
-// 3. Staff invitation email
+// --------------------------------------------------
+// STAFF INVITATION EMAIL
+// --------------------------------------------------
+
 async function sendStaffInvitationEmail({
   email,
   name,
   invitationToken,
 }) {
-  if (!process.env.FRONTEND_ORIGIN) {
-    throw new Error("FRONTEND_ORIGIN is not configured.");
+  const frontendOrigin = process.env.FRONTEND_ORIGIN;
+
+  if (!frontendOrigin) {
+    throw new Error("FRONTEND_ORIGIN is missing in server environment.");
   }
 
   const invitationUrl = new URL(
     "/admin/accept-invitation",
-    process.env.FRONTEND_ORIGIN
+    frontendOrigin
   );
 
   invitationUrl.searchParams.set("token", invitationToken);
@@ -196,58 +211,55 @@ async function sendStaffInvitationEmail({
   const safeName = escapeHtml(name);
   const safeUrl = escapeHtml(invitationUrl.toString());
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  const html = emailTemplate(`
+    <h2 style="color:#76232d;">Staff Invitation</h2>
+
+    <p>Hello ${safeName},</p>
+
+    <p>
+      You have been invited to join the Royal Heights Higher Secondary
+      School administration team.
+    </p>
+
+    <p>
+      Click the button below to accept your invitation and set up
+      your staff account.
+    </p>
+
+    <div style="text-align:center;margin:30px 0;">
+      <a
+        href="${safeUrl}"
+        style="display:inline-block;background:#76232d;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:6px;font-weight:bold;"
+      >
+        Accept Invitation
+      </a>
+    </div>
+
+    <p style="font-size:13px;color:#76645d;">
+      This invitation link is valid for 24 hours and can only be used once.
+    </p>
+
+    <p style="font-size:12px;color:#76645d;">
+      If the button does not work, copy and paste this link into your browser:
+      <br/>
+      ${safeUrl}
+    </p>
+
+    <p>Regards,<br/><strong>Royal Heights Team</strong></p>
+  `);
+
+  return sendEmail({
     to: email,
-    subject: "You Are Invited to Royal Heights Staff Portal",
-    html: emailTemplate(
-      "Welcome to Royal Heights!",
-      `
-        <p>Dear ${safeName},</p>
-
-        <p>
-          The Owner of Royal Heights Higher Secondary School
-          has invited you to join the school's administration portal.
-        </p>
-
-        <p>
-          To activate your staff account and create your password,
-          click the secure invitation link below:
-        </p>
-
-        <p style="text-align:center;margin:30px 0;">
-          <a
-            href="${safeUrl}"
-            style="
-              display:inline-block;
-              background:#76232d;
-              color:#ffffff;
-              padding:13px 24px;
-              border-radius:6px;
-              text-decoration:none;
-              font-weight:bold;
-            "
-          >
-            Accept Invitation
-          </a>
-        </p>
-
-        <p>
-          This invitation link expires after 24 hours and can only
-          be used once.
-        </p>
-
-        <p>
-          If you were not expecting this invitation, you can ignore
-          this email.
-        </p>
-      `
-    ),
+    subject: "Staff Invitation - Royal Heights",
+    html,
   });
 }
 
 module.exports = {
-  transporter,
+  // Resend uses HTTPS API instead of an SMTP transporter.
+  // Kept for compatibility with existing imports.
+  transporter: null,
+
   sendApplicationReceived,
   sendApplicationStatusEmail,
   sendStaffInvitationEmail,
