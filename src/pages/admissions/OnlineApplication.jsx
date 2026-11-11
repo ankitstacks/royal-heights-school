@@ -496,7 +496,7 @@ export default function OnlineApplication() {
                         value={form.phone}
                         onChange={updateField}
                         required
-                        pattern="[0-9+() -]{8,18}"
+                        pattern="[0-9]{10}"
                         maxLength={18}
                         autoComplete="tel"
                         placeholder="Phone number"

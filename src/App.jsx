@@ -2042,7 +2042,7 @@ function App() {
                         name="phone"
                         value={form.phone}
                         onChange={updateEnquiryField}
-                        pattern="[0-9+() -]{8,18}"
+                        pattern="[0-9]{10}"
                         placeholder="Enter contact number"
                         autoComplete="tel"
                       />

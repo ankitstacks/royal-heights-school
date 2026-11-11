@@ -385,7 +385,7 @@ export default function AdmissionEnquiry() {
                       value={form.phone}
                       onChange={updateField}
                       required
-                      pattern="[0-9+() -]{8,18}"
+                      pattern="[0-9]{10}"
                       autoComplete="tel"
                       placeholder="Contact number"
                     />

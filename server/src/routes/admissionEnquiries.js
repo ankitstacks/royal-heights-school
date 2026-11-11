@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const db = require("../db");
+
 const {
   requireAuth,
   requirePermission,
@@ -19,10 +20,14 @@ router.post("/", async (req, res) => {
       message,
     } = req.body;
 
+    // Required field validation
     if (
-      !parentName?.trim() ||
-      !phone?.trim() ||
-      !className?.trim()
+      typeof parentName !== "string" ||
+      typeof phone !== "string" ||
+      typeof className !== "string" ||
+      !parentName.trim() ||
+      !phone.trim() ||
+      !className.trim()
     ) {
       return res.status(400).json({
         success: false,
@@ -30,25 +35,31 @@ router.post("/", async (req, res) => {
       });
     }
 
-    if (!/^[0-9+() -]{8,18}$/.test(phone.trim())) {
+    const cleanPhone = phone.trim();
+
+    // Indian mobile number validation
+    if (!/^[0-9]{10}$/.test(cleanPhone)) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a valid phone number.",
+        message: "Please enter a valid 10-digit mobile number.",
       });
     }
 
     const result = await db.query(
-      `INSERT INTO admission_enquiries
+      `INSERT INTO public.admission_enquiries
        (parent_name, phone, email, class_name, topic, message)
        VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, parent_name, phone, class_name, status, created_at`,
+       RETURNING id, parent_name, phone, email,
+                 class_name, topic, message, status, created_at`,
       [
         parentName.trim(),
-        phone.trim(),
-        email?.trim() || null,
+        cleanPhone,
+        typeof email === "string" ? email.trim() || null : null,
         className.trim(),
-        topic?.trim() || "Admission Process",
-        message?.trim() || null,
+        typeof topic === "string" && topic.trim()
+          ? topic.trim()
+          : "Admission Process",
+        typeof message === "string" ? message.trim() || null : null,
       ]
     );
 
@@ -57,6 +68,7 @@ router.post("/", async (req, res) => {
       message: "Admission enquiry submitted successfully.",
       enquiry: result.rows[0],
     });
+
   } catch (error) {
     console.error("Admission enquiry submission error:", error);
 
@@ -75,16 +87,17 @@ router.get(
   async (req, res) => {
     try {
       const result = await db.query(
-        `SELECT id, parent_name, phone, email, class_name,
-                topic, message, status, created_at
-         FROM admission_enquiries
+        `SELECT id, parent_name, phone, email,
+                class_name, topic, message, status, created_at
+         FROM public.admission_enquiries
          ORDER BY created_at DESC`
       );
 
-      return res.json({
+      return res.status(200).json({
         success: true,
         enquiries: result.rows,
       });
+
     } catch (error) {
       console.error("Fetch admission enquiries error:", error);
 
