@@ -1,5 +1,6 @@
 
 require("dotenv").config();
+
 const express = require("express");
 const session = require("express-session");
 const pgSession = require("connect-pg-simple")(session);
@@ -30,7 +31,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 5000);
 const isProduction = process.env.NODE_ENV === "production";
 
-// Railway runs behind a reverse proxy
+// Render runs behind a reverse proxy
 if (isProduction) {
     app.set("trust proxy", 1);
 }
@@ -48,7 +49,9 @@ if (!process.env.SESSION_SECRET) {
 }
 
 if (process.env.SESSION_SECRET.length < 32) {
-    throw new Error("SESSION_SECRET must contain at least 32 characters.");
+    throw new Error(
+        "SESSION_SECRET must contain at least 32 characters."
+    );
 }
 
 // ==========================================
@@ -69,6 +72,8 @@ console.log("Allowed frontend origins:", allowedOrigins);
 app.use(
     cors({
         origin: (origin, callback) => {
+
+            // Allow server-to-server and Postman requests
             if (!origin) {
                 return callback(null, true);
             }
@@ -83,6 +88,7 @@ app.use(
                 isCloudflareOrigin =
                     parsed.protocol === "https:" &&
                     parsed.hostname.endsWith(".trycloudflare.com");
+
             } catch {
                 isCloudflareOrigin = false;
             }
@@ -95,7 +101,10 @@ app.use(
             }
 
             console.log("Blocked CORS origin:", origin);
-            return callback(new Error("Origin not allowed by CORS"));
+
+            return callback(
+                new Error("Origin not allowed by CORS")
+            );
         },
 
         credentials: true,
@@ -136,7 +145,8 @@ app.use(
 // ==========================================
 
 const uploadsDir = path.resolve(
-    process.env.UPLOAD_DIR || path.join(__dirname, "../uploads")
+    process.env.UPLOAD_DIR ||
+    path.join(__dirname, "../uploads")
 );
 
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -174,18 +184,36 @@ app.use(
 );
 
 // ==========================================
+// ROOT ROUTE
+// ==========================================
+
+app.get("/", (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "Royal Heights Backend is running successfully!",
+        status: "LIVE",
+        healthCheck: "/api/health"
+    });
+});
+
+// ==========================================
 // API ROUTES
 // ==========================================
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/vacancies", vacancyRoutes);
+
 app.use("/api/applications", applicationRoutes);
+
 app.use("/api/staff", staffRoutes);
+
 app.use("/api/admission-enquiries", admissionEnquiryRoutes);
+
 app.use("/api/online-applications", onlineApplicationRoutes);
 
 // ==========================================
-// HEALTH CHECK
+// DATABASE HEALTH CHECK
 // ==========================================
 
 app.get("/api/health", async (req, res, next) => {
@@ -195,10 +223,21 @@ app.get("/api/health", async (req, res, next) => {
         return res.status(200).json({
             success: true,
             status: "ok",
-            database: "connected"
+            server: "connected",
+            database: "connected",
+            message: "Backend and PostgreSQL are working."
         });
+
     } catch (error) {
-        next(error);
+        console.error("Database Health Check Failed:", error);
+
+        return res.status(503).json({
+            success: false,
+            status: "error",
+            server: "running",
+            database: "disconnected",
+            message: "Database connection failed."
+        });
     }
 });
 
@@ -209,7 +248,8 @@ app.get("/api/health", async (req, res, next) => {
 app.use((req, res) => {
     return res.status(404).json({
         success: false,
-        message: "API endpoint not found."
+        message: "API endpoint not found.",
+        path: req.originalUrl
     });
 });
 
@@ -218,6 +258,7 @@ app.use((req, res) => {
 // ==========================================
 
 app.use((error, req, res, next) => {
+
     console.error("Server Error:", error);
 
     if (res.headersSent) {
@@ -228,6 +269,7 @@ app.use((error, req, res, next) => {
 
     return res.status(statusCode).json({
         success: false,
+
         message:
             statusCode >= 500
                 ? "Server error. Please try again later."
@@ -239,10 +281,28 @@ app.use((error, req, res, next) => {
 // START SERVER
 // ==========================================
 
-app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
+
     console.log("---------------------------------------");
     console.log("Royal Heights Backend Started");
     console.log(`Port: ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(
+        `Environment: ${process.env.NODE_ENV || "development"}`
+    );
     console.log("---------------------------------------");
+
 });
+
+// ==========================================
+// SERVER ERROR HANDLING
+// ==========================================
+
+server.on("error", (error) => {
+
+    console.error("Server Startup Error:", error);
+
+    process.exit(1);
+
+});
+
+module.exports = app;
