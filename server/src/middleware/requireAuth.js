@@ -1,100 +1,177 @@
-
 const db = require("../db");
 
-async function requireAuth(req, res, next) {
-  try {
-    const sessionAdmin = req.session?.admin;
+// ==========================================
+// DESTROY INVALID SESSION
+// ==========================================
 
-    if (!sessionAdmin?.id) {
-      return res.status(401).json({
-        error: "Please log in first.",
-      });
-    }
+function destroySession(req) {
+    return new Promise((resolve) => {
+        if (!req.session) {
+            return resolve();
+        }
 
-    // Always verify the account against the database.
-    const result = await db.query(
-      `SELECT id, name, email, role, active,
-              permissions, session_version
-       FROM admin_users
-       WHERE id = $1`,
-      [sessionAdmin.id]
-    );
+        req.session.destroy((error) => {
+            if (error) {
+                console.error(
+                    "[AUTH] Session destruction error:",
+                    error.message
+                );
+            }
 
-    const admin = result.rows[0];
-
-    if (!admin || !admin.active) {
-      req.session.destroy(() => {});
-      return res.status(401).json({
-        error: "Your account is inactive. Please contact the Owner.",
-      });
-    }
-
-    // Invalidate sessions created before a password/security reset.
-    if (
-      sessionAdmin.sessionVersion !== undefined &&
-      Number(sessionAdmin.sessionVersion) !== Number(admin.session_version)
-    ) {
-      req.session.destroy(() => {});
-      return res.status(401).json({
-        error: "Your session has expired. Please log in again.",
-      });
-    }
-
-    // Refresh role and permissions from the database.
-    req.session.admin = {
-      id: admin.id,
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
-      permissions: admin.permissions || {},
-      sessionVersion: admin.session_version,
-    };
-
-    next();
-  } catch (error) {
-    next(error);
-  }
+            resolve();
+        });
+    });
 }
+
+// ==========================================
+// AUTHENTICATION MIDDLEWARE
+// ==========================================
+
+async function requireAuth(req, res, next) {
+    try {
+        const sessionAdmin = req.session?.admin;
+
+        if (!sessionAdmin?.id) {
+            return res.status(401).json({
+                success: false,
+                error: "Please log in first."
+            });
+        }
+
+        // Verify admin account from PostgreSQL.
+        const result = await db.query(
+            `SELECT
+                id,
+                name,
+                email,
+                role,
+                active,
+                permissions,
+                session_version
+             FROM admin_users
+             WHERE id = $1
+             LIMIT 1`,
+            [sessionAdmin.id]
+        );
+
+        const admin = result.rows[0];
+
+        // Account does not exist or is inactive.
+        if (!admin || admin.active !== true) {
+            await destroySession(req);
+
+            return res.status(401).json({
+                success: false,
+                error: "Your account is inactive or unavailable. Please contact the Owner."
+            });
+        }
+
+        // Check session version.
+        const databaseVersion = Number(
+            admin.session_version ?? 0
+        );
+
+        const currentSessionVersion = Number(
+            sessionAdmin.sessionVersion ?? 0
+        );
+
+        if (databaseVersion !== currentSessionVersion) {
+            await destroySession(req);
+
+            return res.status(401).json({
+                success: false,
+                error: "Your session has expired. Please log in again."
+            });
+        }
+
+        // Refresh admin information from database.
+        req.session.admin = {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            role: admin.role,
+            permissions: admin.permissions || {},
+            sessionVersion: databaseVersion
+        };
+
+        return next();
+
+    } catch (error) {
+        console.error(
+            "[AUTH MIDDLEWARE] Error:",
+            error.message
+        );
+
+        return next(error);
+    }
+}
+
+// ==========================================
+// OWNER AUTHORIZATION
+// ==========================================
 
 function requireOwner(req, res, next) {
-  requireAuth(req, res, (error) => {
-    if (error) return next(error);
+    requireAuth(req, res, (error) => {
+        if (error) {
+            return next(error);
+        }
 
-    if (req.session.admin.role !== "owner") {
-      return res.status(403).json({
-        error: "Owner permission required.",
-      });
-    }
+        if (req.session?.admin?.role !== "owner") {
+            return res.status(403).json({
+                success: false,
+                error: "Owner permission required."
+            });
+        }
 
-    next();
-  });
+        return next();
+    });
 }
+
+// ==========================================
+// PERMISSION AUTHORIZATION
+// ==========================================
 
 function requirePermission(permission) {
-  return (req, res, next) => {
-    requireAuth(req, res, (error) => {
-      if (error) return next(error);
+    return (req, res, next) => {
+        requireAuth(req, res, (error) => {
+            if (error) {
+                return next(error);
+            }
 
-      // Owner has full access.
-      if (req.session.admin.role === "owner") {
-        return next();
-      }
+            const admin = req.session?.admin;
 
-      const permissions = req.session.admin.permissions || {};
+            if (!admin) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Please log in first."
+                });
+            }
 
-      if (permissions[permission] !== true) {
-        return res.status(403).json({
-          error: "You do not have permission to perform this action.",
+            // Owner has complete access.
+            if (admin.role === "owner") {
+                return next();
+            }
+
+            const permissions = admin.permissions || {};
+
+            if (permissions[permission] !== true) {
+                return res.status(403).json({
+                    success: false,
+                    error: "You do not have permission to perform this action."
+                });
+            }
+
+            return next();
         });
-      }
-
-      next();
-    });
-  };
+    };
 }
 
+// ==========================================
+// EXPORT MIDDLEWARE
+// ==========================================
+
 module.exports = {
-  requireAuth,
-  requireOwner,
-  requirePermission,
+    requireAuth,
+    requireOwner,
+    requirePermission
 };
