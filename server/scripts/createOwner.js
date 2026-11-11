@@ -5,40 +5,46 @@ const bcrypt = require("bcryptjs");
 const db = require("../src/db");
 
 async function main() {
-  const name = process.env.OWNER_NAME;
+  const name = process.env.OWNER_NAME?.trim();
   const email = process.env.OWNER_EMAIL?.trim().toLowerCase();
   const password = process.env.OWNER_PASSWORD;
 
   if (!name || !email || !password || password.length < 12) {
     throw new Error(
-      "Set OWNER_NAME, OWNER_EMAIL and a strong OWNER_PASSWORD (at least 12 characters) in .env."
+      "Set OWNER_NAME, OWNER_EMAIL and OWNER_PASSWORD (minimum 12 characters)."
     );
   }
 
   const existing = await db.query(
-    "SELECT id FROM admin_users WHERE email = $1",
+    `SELECT id FROM admin_users
+     WHERE LOWER(email) = LOWER($1)`,
     [email]
   );
 
-  if (existing.rowCount) {
+  if (existing.rowCount > 0) {
     console.log("Owner account already exists. No changes made.");
     return;
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  await db.query(
-    `INSERT INTO admin_users (name, email, password_hash, role)
-     VALUES ($1, $2, $3, 'owner')`,
+  const result = await db.query(
+    `INSERT INTO admin_users
+      (name, email, password_hash, role, active)
+     VALUES ($1, $2, $3, 'owner', TRUE)
+     RETURNING id, name, email, role`,
     [name, email, passwordHash]
   );
 
-  console.log(`Owner account created for ${email}`);
+  console.log("Owner account created successfully!");
+  console.log(result.rows[0]);
 }
 
 main()
   .catch((error) => {
-    console.error(error.message);
+    console.error("Owner creation failed:", error.message);
     process.exitCode = 1;
   })
-  .finally(() => db.pool.end());
+  .finally(async () => {
+    await db.pool.end();
+  });
