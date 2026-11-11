@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -31,7 +30,6 @@ const app = express();
 const PORT = Number(process.env.PORT || 5000);
 const isProduction = process.env.NODE_ENV === "production";
 
-// Render runs behind a reverse proxy
 if (isProduction) {
     app.set("trust proxy", 1);
 }
@@ -61,7 +59,7 @@ if (process.env.SESSION_SECRET.length < 32) {
 const allowedOrigins = (
     process.env.FRONTEND_ORIGINS ||
     process.env.FRONTEND_ORIGIN ||
-    "http://localhost:5173,http://127.0.0.1:5173"
+    "https://royal-heights-school.vercel.app,http://localhost:5173,http://127.0.0.1:5173"
 )
     .split(",")
     .map((origin) => origin.trim().replace(/\/+$/, ""))
@@ -69,61 +67,57 @@ const allowedOrigins = (
 
 console.log("Allowed frontend origins:", allowedOrigins);
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow Postman and server-to-server requests
+        if (!origin) {
+            return callback(null, true);
+        }
 
-            // Allow server-to-server and Postman requests
-            if (!origin) {
-                return callback(null, true);
-            }
+        const normalizedOrigin = origin.trim().replace(/\/+$/, "");
 
-            const normalizedOrigin = origin.replace(/\/+$/, "");
+        let isCloudflareOrigin = false;
 
-            let isCloudflareOrigin = false;
+        try {
+            const parsed = new URL(normalizedOrigin);
 
-            try {
-                const parsed = new URL(normalizedOrigin);
+            isCloudflareOrigin =
+                parsed.protocol === "https:" &&
+                parsed.hostname.endsWith(".trycloudflare.com");
+        } catch {
+            isCloudflareOrigin = false;
+        }
 
-                isCloudflareOrigin =
-                    parsed.protocol === "https:" &&
-                    parsed.hostname.endsWith(".trycloudflare.com");
+        if (
+            allowedOrigins.includes(normalizedOrigin) ||
+            isCloudflareOrigin
+        ) {
+            return callback(null, true);
+        }
 
-            } catch {
-                isCloudflareOrigin = false;
-            }
+        console.log("Blocked CORS origin:", origin);
 
-            if (
-                allowedOrigins.includes(normalizedOrigin) ||
-                isCloudflareOrigin
-            ) {
-                return callback(null, true);
-            }
+        return callback(new Error("Origin not allowed by CORS"));
+    },
 
-            console.log("Blocked CORS origin:", origin);
+    credentials: true,
 
-            return callback(
-                new Error("Origin not allowed by CORS")
-            );
-        },
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+    ],
 
-        credentials: true,
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization"
+    ]
+};
 
-        methods: [
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE",
-            "OPTIONS"
-        ],
-
-        allowedHeaders: [
-            "Content-Type",
-            "Authorization"
-        ]
-    })
-);
+app.use(cors(corsOptions));
 
 // ==========================================
 // SECURITY AND BODY PARSING
@@ -216,7 +210,7 @@ app.use("/api/online-applications", onlineApplicationRoutes);
 // DATABASE HEALTH CHECK
 // ==========================================
 
-app.get("/api/health", async (req, res, next) => {
+app.get("/api/health", async (req, res) => {
     try {
         await pool.query("SELECT 1");
 
@@ -258,7 +252,6 @@ app.use((req, res) => {
 // ==========================================
 
 app.use((error, req, res, next) => {
-
     console.error("Server Error:", error);
 
     if (res.headersSent) {
@@ -269,7 +262,6 @@ app.use((error, req, res, next) => {
 
     return res.status(statusCode).json({
         success: false,
-
         message:
             statusCode >= 500
                 ? "Server error. Please try again later."
@@ -282,7 +274,6 @@ app.use((error, req, res, next) => {
 // ==========================================
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-
     console.log("---------------------------------------");
     console.log("Royal Heights Backend Started");
     console.log(`Port: ${PORT}`);
@@ -290,7 +281,6 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         `Environment: ${process.env.NODE_ENV || "development"}`
     );
     console.log("---------------------------------------");
-
 });
 
 // ==========================================
@@ -298,11 +288,8 @@ const server = app.listen(PORT, "0.0.0.0", () => {
 // ==========================================
 
 server.on("error", (error) => {
-
     console.error("Server Startup Error:", error);
-
     process.exit(1);
-
 });
 
 module.exports = app;
