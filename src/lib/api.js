@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 export async function api(path, options = {}) {
   try {
@@ -9,7 +9,9 @@ export async function api(path, options = {}) {
       ...options.headers,
     };
 
-    const response = await fetch(`${API_URL}${path}`, {
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+    const response = await fetch(`${API_URL}${cleanPath}`, {
       ...options,
       headers,
       credentials: "include",
@@ -22,20 +24,24 @@ export async function api(path, options = {}) {
     if (contentType.includes("application/json")) {
       data = await response.json();
     } else {
-      const text = await response.text();
-      data = text ? { error: text } : null;
+      const responseText = await response.text();
+
+      data = responseText
+        ? { message: responseText }
+        : null;
     }
 
     if (!response.ok) {
       throw new Error(
-        data?.error || `Request failed with status ${response.status}`
+        data?.error ||
+        data?.message ||
+        `Request failed with status ${response.status}`
       );
     }
 
     return data;
   } catch (error) {
     console.error(`API Error [${path}]:`, error);
-
     throw error;
   }
 }

@@ -1,11 +1,7 @@
-
-/* =========================================================
+/* =====================================================
    ROYAL HEIGHTS — ADMIN PANEL
    Premium Burgundy, Cream & Antique Gold Theme
-   Complete Responsive Stylesheet
-========================================================= */
-
-/* -------------------- ROOT & RESET -------------------- */
+===================================================== */
 
 :root {
   --admin-bg: #f8f3ec;
@@ -32,15 +28,14 @@
   --admin-danger: #a52626;
   --admin-danger-bg: #fff0ef;
 
-  --admin-shadow:
-    0 10px 30px rgba(70, 34, 25, 0.045);
-
-  --admin-shadow-hover:
-    0 16px 38px rgba(70, 34, 25, 0.09);
+  --admin-shadow: 0 10px 30px rgba(70, 34, 25, 0.045);
+  --admin-shadow-hover: 0 16px 38px rgba(70, 34, 25, 0.09);
 
   --admin-radius: 16px;
   --admin-transition: 0.25s ease;
 }
+
+/* RESET */
 
 .admin-screen,
 .admin-screen *,
@@ -78,11 +73,11 @@
 }
 
 .admin-screen ::selection {
-  background: #76232d;
+  background: var(--admin-burgundy);
   color: white;
 }
 
-/* -------------------- LOGIN -------------------- */
+/* LOGIN */
 
 .admin-login-card {
   display: flex;
@@ -91,16 +86,12 @@
   gap: 17px;
   margin: 7vh auto;
   padding: 36px;
-
   border: 1px solid var(--admin-border);
   border-radius: 24px;
-
   background: var(--admin-surface);
-
   box-shadow:
     0 25px 70px rgba(70, 34, 25, 0.08),
     0 4px 12px rgba(70, 34, 25, 0.025);
-
   animation: adminFadeUp 0.55s ease both;
 }
 
@@ -149,11 +140,11 @@
 
 .admin-login-card label,
 .admin-vacancy-form label,
-.admin-application-item label {
+.admin-application-item label,
+.admin-online-application-status label {
   display: flex;
   flex-direction: column;
   gap: 8px;
-
   color: var(--admin-burgundy);
   font-size: 12px;
   font-weight: 700;
@@ -163,18 +154,16 @@
 .admin-vacancy-form input,
 .admin-vacancy-form textarea,
 .admin-vacancy-form select,
-.admin-application-item select {
+.admin-application-item select,
+.admin-online-application-status select {
   width: 100%;
   min-width: 0;
   padding: 13px 14px;
-
   border: 1px solid var(--admin-border-dark);
   border-radius: 10px;
-
   outline: none;
   background: white;
   color: var(--admin-text);
-
   transition:
     border-color var(--admin-transition),
     box-shadow var(--admin-transition),
@@ -185,7 +174,8 @@
 .admin-vacancy-form input:focus,
 .admin-vacancy-form textarea:focus,
 .admin-vacancy-form select:focus,
-.admin-application-item select:focus {
+.admin-application-item select:focus,
+.admin-online-application-status select:focus {
   border-color: var(--admin-gold);
   box-shadow: 0 0 0 4px rgba(177, 132, 67, 0.12);
 }
@@ -196,17 +186,12 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
-
   padding: 14px 18px;
-
   border: 0;
   border-radius: 999px;
-
   background: var(--admin-burgundy);
   color: white;
-
   font-weight: 700;
-
   transition:
     background var(--admin-transition),
     transform var(--admin-transition),
@@ -239,23 +224,19 @@
   color: var(--admin-burgundy);
 }
 
-/* -------------------- HEADER -------------------- */
+/* HEADER */
 
 .admin-header {
   position: sticky;
   top: 0;
   z-index: 50;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-
   padding: 17px clamp(20px, 5vw, 65px);
-
   border-bottom: 1px solid var(--admin-border);
   background: rgba(255, 253, 250, 0.96);
-
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -276,7 +257,6 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
-
   color: var(--admin-burgundy-deep);
   font-size: 12px;
   font-weight: 700;
@@ -296,18 +276,13 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   padding: 10px 15px;
-
   border: 1px solid var(--admin-border-dark);
   border-radius: 999px;
-
   background: white;
   color: var(--admin-burgundy);
-
   font-size: 12px;
   font-weight: 700;
-
   transition:
     background var(--admin-transition),
     border-color var(--admin-transition),
@@ -321,7 +296,7 @@
   transform: translateY(-1px);
 }
 
-/* -------------------- DASHBOARD -------------------- */
+/* DASHBOARD */
 
 .admin-dashboard {
   width: min(1320px, calc(100% - 40px));
@@ -348,7 +323,7 @@
   line-height: 1.7;
 }
 
-/* -------------------- STATISTICS -------------------- */
+/* STATISTICS */
 
 .admin-stats {
   display: grid;
@@ -360,22 +335,16 @@
 .admin-stats article {
   position: relative;
   overflow: hidden;
-
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 9px 14px;
-
   padding: 24px;
-
   border: 1px solid var(--admin-border);
   border-radius: 18px;
-
   background: var(--admin-surface);
   color: var(--admin-gold);
-
   box-shadow: var(--admin-shadow);
-
   transition:
     transform var(--admin-transition),
     box-shadow var(--admin-transition),
@@ -387,13 +356,10 @@
   position: absolute;
   right: -25px;
   bottom: -40px;
-
   width: 115px;
   height: 115px;
-
   border: 1px solid rgba(177, 132, 67, 0.12);
   border-radius: 50%;
-
   pointer-events: none;
 }
 
@@ -416,19 +382,16 @@
   line-height: 1.2;
 }
 
-/* -------------------- TABS -------------------- */
+/* TABS */
 
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-
   margin-bottom: 22px;
   padding: 8px;
-
   border: 1px solid var(--admin-border);
   border-radius: 15px;
-
   background: var(--admin-cream);
 }
 
@@ -437,18 +400,13 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   padding: 12px 18px;
-
   border: 1px solid transparent;
   border-radius: 10px;
-
   background: transparent;
   color: var(--admin-burgundy);
-
   font-size: 12px;
   font-weight: 700;
-
   transition:
     color var(--admin-transition),
     background var(--admin-transition),
@@ -465,11 +423,10 @@
   border-color: var(--admin-burgundy);
   background: var(--admin-burgundy);
   color: white;
-
   box-shadow: 0 5px 14px rgba(118, 35, 45, 0.18);
 }
 
-/* -------------------- MAIN PANELS -------------------- */
+/* MAIN PANELS */
 
 .admin-vacancy-layout {
   display: grid;
@@ -481,14 +438,10 @@
 .admin-panel-card {
   min-width: 0;
   padding: 26px;
-
   border: 1px solid var(--admin-border);
   border-radius: 19px;
-
   background: var(--admin-surface);
-
   box-shadow: var(--admin-shadow);
-
   transition: box-shadow var(--admin-transition);
 }
 
@@ -517,17 +470,13 @@
 .admin-panel-title button {
   display: grid;
   flex-shrink: 0;
-
   width: 39px;
   height: 39px;
   place-items: center;
-
   border: 1px solid var(--admin-border-dark);
   border-radius: 50%;
-
   background: white;
   color: var(--admin-burgundy);
-
   transition:
     background var(--admin-transition),
     border-color var(--admin-transition),
@@ -540,7 +489,7 @@
   transform: rotate(90deg);
 }
 
-/* -------------------- VACANCY FORM -------------------- */
+/* VACANCY FORM */
 
 .admin-vacancy-form {
   display: grid;
@@ -564,7 +513,7 @@
   margin-top: 4px;
 }
 
-/* -------------------- VACANCY & APPLICATION ITEMS -------------------- */
+/* VACANCY AND APPLICATION ITEMS */
 
 .admin-list-item,
 .admin-application-item {
@@ -572,9 +521,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-
   padding: 19px 0;
-
   border-top: 1px solid #eee3d7;
 }
 
@@ -608,18 +555,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-
   padding: 9px 12px;
-
   border: 1px solid var(--admin-border-dark);
   border-radius: 8px;
-
   background: white;
   color: var(--admin-burgundy);
-
   font-size: 11px;
   font-weight: 700;
-
   transition:
     background var(--admin-transition),
     border-color var(--admin-transition),
@@ -645,7 +587,7 @@
   min-width: 150px;
 }
 
-/* -------------------- ADMISSION ENQUIRIES -------------------- */
+/* ADMISSION ENQUIRIES */
 
 .admin-admission-section {
   display: flex;
@@ -662,16 +604,11 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-
   padding: 22px;
-
   border: 1px solid var(--admin-border);
   border-radius: 16px;
-
   background: white;
-
   box-shadow: 0 5px 18px rgba(70, 34, 25, 0.025);
-
   transition:
     border-color var(--admin-transition),
     box-shadow var(--admin-transition),
@@ -699,71 +636,99 @@
   overflow-wrap: anywhere;
 }
 
-.admin-admission-item-heading p {
-  margin: 0;
+.admin-admission-item-heading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--admin-muted);
   font-size: 11px;
   line-height: 1.7;
+}
+
+.admin-admission-item-heading > strong {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--admin-surface-soft);
+  color: var(--admin-burgundy);
+  font-size: 11px;
 }
 
 .admin-admission-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
-
   padding: 17px;
-
   border: 1px solid #f0e6d9;
   border-radius: 12px;
-
   background: var(--admin-surface-soft);
 }
 
-.admin-admission-details > div {
+.admin-admission-details p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
   min-width: 0;
+  margin: 0;
   color: var(--admin-muted);
   font-size: 12px;
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
 
+.admin-admission-details p svg {
+  flex-shrink: 0;
+  color: var(--admin-gold);
+}
+
 .admin-admission-details strong {
-  display: block;
-  margin-bottom: 4px;
   color: var(--admin-burgundy);
   font-size: 11px;
   font-weight: 800;
 }
 
+.admin-admission-details a {
+  color: var(--admin-burgundy);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.admin-admission-details a:hover {
+  color: var(--admin-gold);
+  text-decoration: underline;
+}
+
 .admin-admission-message {
   padding: 15px 17px;
-
   border-left: 3px solid var(--admin-gold);
   border-radius: 0 10px 10px 0;
-
   background: #fbf5eb;
   color: #66564b;
-
   font-size: 12px;
   line-height: 1.8;
-
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.admin-admission-message strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--admin-burgundy);
+}
+
+.admin-admission-message p {
+  margin: 0;
 }
 
 .admin-admission-status {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-
   padding: 6px 11px;
-
   border: 1px solid var(--admin-border);
   border-radius: 999px;
-
   background: var(--admin-surface-soft);
   color: #765b43;
-
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -773,7 +738,20 @@
   justify-content: flex-start;
 }
 
-/* -------------------- FEEDBACK STATES -------------------- */
+/* ONLINE APPLICATION STATUS */
+
+.admin-online-application-status {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-online-application-status label {
+  width: min(240px, 100%);
+}
+
+/* FEEDBACK */
 
 .admin-error,
 .admin-notice {
@@ -796,7 +774,7 @@
   color: var(--admin-success);
 }
 
-/* -------------------- EMPTY STATE -------------------- */
+/* EMPTY STATE */
 
 .admin-empty-state {
   display: flex;
@@ -804,16 +782,12 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-
   min-height: 190px;
   padding: 35px 18px;
-
   border: 1px dashed var(--admin-border-dark);
   border-radius: 14px;
-
   background: var(--admin-surface-soft);
   color: var(--admin-gold);
-
   text-align: center;
 }
 
@@ -825,7 +799,7 @@
   line-height: 1.7;
 }
 
-/* -------------------- STAFF MANAGEMENT -------------------- */
+/* STAFF MANAGEMENT */
 
 .admin-staff-section {
   display: flex;
@@ -853,23 +827,23 @@
   line-height: 1.8;
 }
 
+.admin-staff-heading > span {
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
 .admin-primary-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-
   padding: 13px 19px;
-
   border: 0;
   border-radius: 999px;
-
   background: var(--admin-burgundy);
   color: white;
-
   font-size: 12px;
   font-weight: 700;
-
   transition:
     background var(--admin-transition),
     transform var(--admin-transition),
@@ -893,12 +867,9 @@
   display: flex;
   flex-direction: column;
   gap: 21px;
-
   padding: 24px;
-
   border: 1px solid var(--admin-border);
   border-radius: 16px;
-
   background: var(--admin-surface-soft);
 }
 
@@ -921,7 +892,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-
   color: var(--admin-burgundy);
   font-size: 12px;
   font-weight: 700;
@@ -931,14 +901,11 @@
   width: 100%;
   min-width: 0;
   padding: 13px 14px;
-
   border: 1px solid var(--admin-border-dark);
   border-radius: 10px;
-
   outline: none;
   background: white;
   color: var(--admin-text);
-
   transition:
     border-color var(--admin-transition),
     box-shadow var(--admin-transition);
@@ -955,14 +922,12 @@
   cursor: not-allowed;
 }
 
-/* Permissions */
+/* PERMISSIONS */
 
 .admin-permissions {
   padding: 20px;
-
   border: 1px solid var(--admin-border);
   border-radius: 13px;
-
   background: white;
 }
 
@@ -970,9 +935,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-
   margin: 0 0 9px;
-
   color: var(--admin-burgundy);
   font-size: 14px;
 }
@@ -981,7 +944,6 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 13px;
-
   margin-top: 18px;
 }
 
@@ -989,19 +951,14 @@
   display: flex;
   align-items: center;
   gap: 11px;
-
   min-height: 42px;
   padding: 10px 12px;
-
   border: 1px solid #eee3d7;
   border-radius: 9px;
-
   background: var(--admin-surface-soft);
   color: var(--admin-text);
-
   font-size: 12px;
   cursor: pointer;
-
   transition:
     background var(--admin-transition),
     border-color var(--admin-transition);
@@ -1016,7 +973,6 @@
   width: 17px;
   height: 17px;
   flex-shrink: 0;
-
   accent-color: var(--admin-burgundy);
   cursor: pointer;
 }
@@ -1025,16 +981,14 @@
   align-self: flex-start;
 }
 
-/* Staff list */
+/* STAFF LIST */
 
 .admin-staff-list-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-
   padding-bottom: 14px;
-
   border-bottom: 1px solid #eee3d7;
 }
 
@@ -1054,9 +1008,7 @@
   grid-template-columns: minmax(180px, 1fr) minmax(150px, 1fr) auto;
   align-items: center;
   gap: 20px;
-
   padding: 21px 0;
-
   border-bottom: 1px solid #eee3d7;
 }
 
@@ -1073,12 +1025,9 @@
   height: 45px;
   flex-shrink: 0;
   place-items: center;
-
   border-radius: 50%;
-
   background: var(--admin-burgundy);
   color: white;
-
   font: 500 20px Georgia, serif;
 }
 
@@ -1093,23 +1042,23 @@
   display: flex;
   align-items: center;
   gap: 5px;
-
   margin: 0 0 8px;
-
   color: var(--admin-muted);
   font-size: 11px;
   overflow-wrap: anywhere;
+}
+
+.admin-staff-info .admin-staff-designation {
+  color: var(--admin-gold);
+  font-weight: 700;
 }
 
 .staff-active,
 .staff-inactive {
   display: inline-block;
   width: fit-content;
-
   padding: 5px 10px;
-
   border-radius: 999px;
-
   font-size: 10px;
   font-weight: 800;
 }
@@ -1132,13 +1081,10 @@
 
 .admin-staff-permission-summary span {
   padding: 7px 10px;
-
   border: 1px solid var(--admin-border);
   border-radius: 7px;
-
   background: var(--admin-surface-soft);
   color: #765b43;
-
   font-size: 10px;
 }
 
@@ -1151,19 +1097,16 @@
   background: var(--admin-danger-bg) !important;
 }
 
-/* -------------------- FOOTER -------------------- */
+/* FOOTER */
 
 .admin-footer {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 14px;
-
   padding: 24px clamp(20px, 5vw, 65px);
-
   border-top: 1px solid var(--admin-border);
   background: var(--admin-surface);
-
   color: var(--admin-muted);
   font-size: 12px;
 }
@@ -1178,7 +1121,7 @@
   color: var(--admin-gold);
 }
 
-/* -------------------- SCROLLBAR -------------------- */
+/* SCROLLBAR */
 
 .admin-screen ::-webkit-scrollbar {
   width: 8px;
@@ -1198,7 +1141,7 @@
   background: var(--admin-gold);
 }
 
-/* -------------------- RESPONSIVE: TABLET -------------------- */
+/* TABLET */
 
 @media (max-width: 1000px) {
   .admin-vacancy-layout {
@@ -1246,7 +1189,7 @@
   }
 }
 
-/* -------------------- RESPONSIVE: MOBILE -------------------- */
+/* MOBILE */
 
 @media (max-width: 600px) {
   .admin-header {
@@ -1374,6 +1317,14 @@
     width: 100%;
   }
 
+  .admin-online-application-status {
+    justify-content: stretch;
+  }
+
+  .admin-online-application-status label {
+    width: 100%;
+  }
+
   .admin-footer {
     flex-direction: column;
     padding: 20px;
@@ -1389,7 +1340,7 @@
   }
 }
 
-/* -------------------- REDUCED MOTION -------------------- */
+/* REDUCED MOTION */
 
 @media (prefers-reduced-motion: reduce) {
   .admin-screen *,

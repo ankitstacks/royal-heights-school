@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
@@ -20,7 +19,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 
-import { api } from "../../lib/api";
+import { api, API_URL } from "../../lib/api";
 import "./AdminPanel.css";
 
 // --------------------------------------------------
@@ -164,7 +163,9 @@ export default function AdminPanel() {
   // FETCH DATA
   // --------------------------------------------------
 
-  async function refreshData(includeOnlineData = canViewOnlineApplications) {
+  async function refreshData(
+    includeOnlineData = canViewOnlineApplications
+  ) {
     const requests = [
       api("/vacancies"),
       api("/applications"),
@@ -212,7 +213,10 @@ export default function AdminPanel() {
         await refreshStaff();
       } else if (tab === "admission-enquiries") {
         await refreshAdmissionEnquiries();
-      } else if (tab === "online-applications" && canViewOnlineApplications) {
+      } else if (
+        tab === "online-applications" &&
+        canViewOnlineApplications
+      ) {
         await refreshOnlineApplications();
       } else {
         await refreshData();
@@ -282,8 +286,10 @@ export default function AdminPanel() {
 
     if (
       tab === "online-applications" &&
-      (admin.role === "owner" ||
-        admin.permissions?.view_online_applications === true)
+      (
+        admin.role === "owner" ||
+        admin.permissions?.view_online_applications === true
+      )
     ) {
       refreshOnlineApplications().catch((err) => {
         setError(err.message);
@@ -311,9 +317,9 @@ export default function AdminPanel() {
       setAdmin(data.admin);
 
       await refreshData(
-          data.admin?.role === "owner" ||
-          data.admin?.permissions?.view_online_applications === true
-        );
+        data.admin?.role === "owner" ||
+        data.admin?.permissions?.view_online_applications === true
+      );
     } catch (err) {
       setError(err.message || "Login failed.");
     } finally {
@@ -453,11 +459,9 @@ export default function AdminPanel() {
   }
 
   async function downloadResume(application) {
-    const apiUrl = import.meta.env.VITE_API_URL || "/api";
-
     try {
       const response = await fetch(
-        `${apiUrl}/applications/${application.id}/resume`,
+        `${API_URL}/applications/${application.id}/resume`,
         { credentials: "include" }
       );
 
@@ -489,7 +493,9 @@ export default function AdminPanel() {
 
   async function updateOnlineApplicationStatus(id, status) {
     if (!canManageOnlineApplications) {
-      setError("You do not have permission to manage online applications.");
+      setError(
+        "You do not have permission to manage online applications."
+      );
       return;
     }
 
